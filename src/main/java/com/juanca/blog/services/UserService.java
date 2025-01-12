@@ -1,68 +1,86 @@
 package com.juanca.blog.services;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.juanca.blog.entities.User;
+import com.juanca.blog.exceptions.ResourceNotFoundException;
 import com.juanca.blog.payloads.UserDTO;
 import com.juanca.blog.repositories.IUserRepository;
 
+@Service
 public class UserService implements IUserService{
 	
-	@Autowired
+
 	private IUserRepository repo;
+	private ModelMapper mapper;
 
-	@Override
-	public UserDTO createUser(UserDTO user) {
-		
-		User userAux = dtoToUser(user);
-		userAux = repo.save(userAux);
-		
-		user = userToDto(userAux);
-		return user;
+	@Autowired
+	public UserService(IUserRepository repo, ModelMapper mapper) {
+		super();
+		this.repo = repo;
+		this.mapper = mapper;
 	}
 
 	@Override
-	public UserDTO updateUser(UserDTO user, Integer userId) {
-		// TODO Auto-generated method stub
-		return null;
+	public UserDTO createUser(UserDTO userDTO) {
+		
+		User user = dtoToUser(userDTO);
+		
+		user = this.repo.save(user);
+		
+		return userToDto(user);
 	}
+
+	@Override
+	public UserDTO updateUser(UserDTO userDTO, Integer userId) {
+		
+		User user = this.repo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User","id",userId));
+		
+		user.setAbout(userDTO.getAbout());
+		user.setEmail(userDTO.getEmail());
+		user.setName(userDTO.getName());
+		user.setPassword(userDTO.getPassword());
+		
+	    User updatedUser = this.repo.save(user);
+	    
+	    return userToDto(updatedUser);
+	}
+
 
 	@Override
 	public UserDTO getUserById(Integer userId) {
-		// TODO Auto-generated method stub
-		return null;
+		User foundUser = this.repo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User","id",userId));
+		return userToDto(foundUser);
 	}
 
 	@Override
 	public List<UserDTO> getAllUsers() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		List<User> users = this.repo.findAll();
+		
+		return users.stream().map(this::userToDto).collect(Collectors.toList());
 	}
 
 	@Override
 	public void deleteUser(Integer userId) {
-		// TODO Auto-generated method stub
-		
+		User user = this.repo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User","id",userId));
+		this.repo.delete(user);
 	}
 	
 	private User dtoToUser (UserDTO dto) {
-		User user = User.builder().about(dto.getAbout()).
-				email(dto.getEmail()).
-				id(dto.getId()).
-				name(dto.getName()).
-				password(dto.getPassword()).build();
+		User user = mapper.map(dto, User.class);
 		return user;
 	}
 
 	private UserDTO userToDto(User user) {
-	    UserDTO dto = UserDTO.builder()
-	            .about(user.getAbout())
-	            .email(user.getEmail())
-	            .id(user.getId())
-	            .name(user.getName())
-	            .build(); // Sin password
+	    UserDTO dto = mapper.map(user,UserDTO.class);
+	    
 	    return dto;
 	}
 

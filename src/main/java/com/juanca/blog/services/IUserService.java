@@ -1,15 +1,16 @@
 package com.juanca.blog.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.juanca.blog.payloads.UserDTO;
 
 public interface IUserService {
 	
-    UserDTO createUser(UserDTO user);
+    UserDTO createUser(UserDTO userDTO);
 
     // Actualizar un usuario existente
-    UserDTO updateUser(UserDTO user, Integer userId);
+    UserDTO updateUser(UserDTO userDTO, Integer userId);
 
     // Obtener un usuario por su ID
     UserDTO getUserById(Integer userId);
